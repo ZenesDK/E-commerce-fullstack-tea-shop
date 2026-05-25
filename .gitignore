@@ -1,0 +1,140 @@
+# ==================== Node.js ====================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+package-lock.json
+yarn.lock
+
+# ==================== Сборка (Webpack / Vite) ====================
+# Vite
+dist/
+.svelte-kit/
+.vite/
+
+# Webpack
+build/
+.bundle/
+*.bundle.js
+*.chunk.js
+
+# Source maps
+*.map
+
+# ==================== Environment ====================
+# Секреты и конфигурация окружения
+.env
+.env.local
+.env.*.local
+*.env
+
+# ==================== GraphQL / Apollo ====================
+# Интроспекция схемы (если генерируется)
+graphql.schema.json
+schema.graphql
+*.graphqls
+
+# Apollo client codegen
+__generated__/
+types.ts
+
+# ==================== Message Brokers ====================
+# RabbitMQ данные (локальный запуск)
+rabbitmq_data/
+mnesia/
+
+# Kafka данные (локальный запуск)
+kafka-logs/
+zookeeper_data/
+kafka-data/
+
+# ==================== Базы данных (локальные) ====================
+# MongoDB
+mongo-data/
+mongod.log
+*.wt
+*.journal
+
+# PostgreSQL (если используется локально)
+*.sql
+dump.sql
+*.backup
+pg_log/
+
+# Redis
+dump.rdb
+appendonly.aof
+
+# ==================== Docker ====================
+# Docker Compose временные файлы
+.docker/
+.docker-compose/
+
+# Docker build cache
+.dockerignore
+
+# ==================== IDE / Редакторы ====================
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/settings.json
+
+# IntelliJ / WebStorm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ==================== OS ====================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.Trash-*
+
+# ==================== Тесты и отладка ====================
+coverage/
+.nyc_output/
+*.lcov
+jest.config.js.bak
+
+# ==================== Логи ====================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pm2.log
+
+# ==================== Временные файлы ====================
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ==================== Документация (опционально) ====================
+# Если генерируете API docs автоматически
+docs/api/
+swagger.json
+swagger.yaml
+
+analyze_project.py
+project_structure_and_content.txt
