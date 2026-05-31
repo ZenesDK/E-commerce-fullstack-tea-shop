@@ -74,7 +74,6 @@ function setupRoutes(app) {
 
     // GET /api/products - Кэш 600 секунд (10 минут)
     app.get('/api/products', 
-        authMiddleware, 
         cacheMiddleware('products', 600), 
         productController.getAll.bind(productController)
     );

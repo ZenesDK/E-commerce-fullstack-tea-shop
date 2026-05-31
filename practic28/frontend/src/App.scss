@@ -1154,3 +1154,19 @@ a {
   
   &:hover { background-color: #45a049; }
 }
+
+.btn-login-header {
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid #4CAF50;
+  color: #a5d6a7;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #4CAF50;
+    color: white;
+  }
+}

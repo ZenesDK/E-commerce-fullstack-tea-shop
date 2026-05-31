@@ -65,7 +65,22 @@ export default function CartPage() {
         
         <div>
           <h3>Итого: {totalAmount.toFixed(2)} ₽</h3>
-          <button className="btn-checkout">Перейти к оплате</button>
+          <button 
+            className="btn-checkout"
+            onClick={() => {
+              const token = localStorage.getItem('accessToken');
+              if (!token) {
+                // 🔥 Нет токена — редирект на логин с возвратом в корзину
+                window.location.href = '/login?returnTo=/cart';
+              } else {
+                // 🔥 Есть токен — можно переходить к оплате (здесь будет Stripe)
+                alert('Переход к оплате (Stripe)');
+                // Здесь будет интеграция со Stripe
+              }
+            }}
+          >
+            Перейти к оплате
+          </button>
         </div>
       </div>
     </div>

@@ -14,23 +14,22 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    
     try {
       const response = await login(form);
       const { accessToken, refreshToken } = response.data;
-      
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
-      
       const decoded = JSON.parse(atob(accessToken.split('.')[1]));
       localStorage.setItem('userRole', decoded.role);
       
-      console.log('Успешный вход. Роль:', decoded.role);
-      
       // 🔥 СИНХРОНИЗАЦИЯ КОРЗИНЫ
-      await syncAndLogin(); 
+      await syncAndLogin();
       
-      navigate('/products');
+      // 🔥 РЕДИРЕКТ: если в URL есть ?returnTo=/cart — идём туда, иначе на /products
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnTo = urlParams.get('returnTo');
+      navigate(returnTo || '/products');
+      
     } catch (err) {
       console.error('Ошибка входа:', err);
       setError(err.response?.data?.error || 'Ошибка входа');

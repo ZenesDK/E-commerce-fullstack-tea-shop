@@ -6,9 +6,9 @@ import Register from './pages/Register';
 import ProductsList from './pages/ProductsList';
 import ProductForm from './pages/ProductForm';
 import UsersList from './pages/UsersList';
+import CartPage from './pages/CartPage';
 import PrivateRoute from './components/PrivateRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
-import CartPage from './pages/CartPage';
 import './App.scss';
 
 function App() {
@@ -43,45 +43,48 @@ function App() {
     <BrowserRouter>
       <div className="App">
         <Routes>
+          {/* 🔓 ПУБЛИЧНЫЕ МАРШРУТЫ (доступны всем) */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
-          <Route path="/products" element={
-            <PrivateRoute>
-              <ProductsList />
-            </PrivateRoute>
-          } />
+          {/* 🔥 КАТАЛОГ — ДОСТУПЕН ВСЕМ (убрали PrivateRoute!) */}
+          <Route path="/products" element={<ProductsList />} />
           
+          {/* 🔐 ЗАЩИЩЁННЫЕ МАРШРУТЫ (только для авторизованных) */}
+          
+          {/* Создание товара — только admin */}
           <Route path="/products/new" element={
             <RoleBasedRoute allowedRoles={['admin']}>
               <ProductForm />
             </RoleBasedRoute>
           } />
           
+          {/* Просмотр товара по ID — только авторизованные */}
           <Route path="/products/:id" element={
             <PrivateRoute>
               <ProductForm />
             </PrivateRoute>
           } />
           
+          {/* Редактирование товара — только admin */}
           <Route path="/products/:id/edit" element={
             <RoleBasedRoute allowedRoles={['admin']}>
               <ProductForm />
             </RoleBasedRoute>
           } />
           
+          {/* Управление пользователями — только admin */}
           <Route path="/users" element={
             <RoleBasedRoute allowedRoles={['admin']}>
               <UsersList />
             </RoleBasedRoute>
           } />
           
+          {/* КОРЗИНА */}
+          <Route path="/cart" element={<CartPage />} />
+          
+          {/* Редирект с корня на каталог */}
           <Route path="/" element={<Navigate to="/products" />} />
-          <Route path="/cart" element={
-              <PrivateRoute>
-                  <CartPage />
-              </PrivateRoute>
-          } />
         </Routes>
       </div>
     </BrowserRouter>

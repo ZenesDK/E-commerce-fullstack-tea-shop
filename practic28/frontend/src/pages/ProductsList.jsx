@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { getProducts, deleteProduct } from '../api/products';
-import { useCart } from '../context/CartContext'; // 👈 Импортируем хук корзины
+import { useCart } from '../context/CartContext';
 
 export default function ProductsList() {
   const [products, setProducts] = useState([]);
@@ -10,7 +10,6 @@ export default function ProductsList() {
   const [expandedId, setExpandedId] = useState(null);
   const [imageErrors, setImageErrors] = useState({});
   
-  // 🔍 Состояние для фильтров
   const [filters, setFilters] = useState({
     search: '',
     category: '',
@@ -20,8 +19,6 @@ export default function ProductsList() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   
   const navigate = useNavigate();
-  
-  // 🛒 Получаем данные корзины из контекста
   const { items, addToCart, totalCount } = useCart();
 
   const updateRole = () => {
@@ -34,11 +31,15 @@ export default function ProductsList() {
         setUserRole(role);
       } catch (err) {
         console.error('Ошибка декодирования токена:', err);
+        // Если токен невалидный — считаем пользователя гостем
+        setUserRole('guest');
       }
+    } else {
+      // 🔥 НЕТ ТОКЕНА — пользователь гость
+      setUserRole('guest');
     }
   };
 
-  // 🔍 Debounce для поиска (300мс задержка)
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(filters.search);
@@ -46,7 +47,6 @@ export default function ProductsList() {
     return () => clearTimeout(handler);
   }, [filters.search]);
 
-  // 🏷️ Получаем уникальные категории из товаров
   const categories = useMemo(() => {
     const cats = [...new Set(products.map(p => p.category).filter(Boolean))];
     return cats.sort();
@@ -57,7 +57,6 @@ export default function ProductsList() {
     fetchProducts();
   }, []);
 
-  // 🔍 Обновлённая функция загрузки с фильтрами
   const fetchProducts = async () => {
     try {
       const params = new URLSearchParams();
@@ -125,19 +124,15 @@ export default function ProductsList() {
   };
 
   const handleAddToCart = (product) => {
-    addToCart(product, 1)
-      .then(() => {
-        // Можно показать тост/уведомление
-      })
-      .catch(() => {
-        // Ошибка уже обработана в addToCart
-      });
+    addToCart(product, 1);
   };
 
+  // 🔥 ПРОВЕРКА: только админ может управлять товарами
   const isAdmin = userRole === 'admin';
-  const isCustomer = userRole === 'customer' || isAdmin;
+  const isAuthenticated = userRole !== null && userRole !== 'guest';
 
-  if (userRole === null) {
+  // 🔥 ИЗМЕНЕНИЕ: показываем загрузку только если role ещё не определилась
+  if (userRole === null && !products.length) {
     return (
       <div className="container">
         <div className="loading">
@@ -153,19 +148,29 @@ export default function ProductsList() {
       <div className="header-with-logout">
         <h2>Мир чая</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* 🛒 Кнопка корзины */}
           <Link to="/cart" className="btn-cart-icon" title="Корзина">
             🛒 {totalCount > 0 ? <span className="cart-badge">{totalCount}</span> : ''}
           </Link>
           
-          <span className="user-role-badge">
-            {userRole === 'admin' ? 'Администратор' : 'Покупатель'}
-          </span>
-          <button onClick={handleLogout} className="btn-logout">Выйти</button>
+          {/* 🔥 КНОПКА "ВОЙТИ" ДЛЯ ГОСТЕЙ */}
+          {!isAuthenticated && (
+            <Link to="/login" className="btn-login-header">
+              Войти
+            </Link>
+          )}
+          
+          {/* 🔥 ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ */}
+          {isAuthenticated && (
+            <>
+              <span className="user-role-badge">
+                {userRole === 'admin' ? 'Администратор' : 'Покупатель'}
+              </span>
+              <button onClick={handleLogout} className="btn-logout">Выйти</button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* 🔍 Панель поиска и фильтрации */}
       <div className="filters-panel">
         <div className="filters-row">
           <div className="filter-group filter-group--search">
