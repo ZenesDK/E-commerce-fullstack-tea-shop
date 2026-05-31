@@ -30,32 +30,37 @@ class ProductController {
             const query = {};
 
             // 🔍 Поиск по названию (регистронезависимый)
-            if (search) {
-                query.title = { $regex: search, $options: 'i' };
+            if (search && typeof search === 'string' && search.trim()) {
+                query.title = { $regex: search.trim(), $options: 'i' };
             }
 
-            // 🏷️ Фильтр по категории (точное совпадение)
-            if (category) {
-                query.category = category;
+            // 🏷️ Фильтр по категории
+            if (category && typeof category === 'string' && category.trim()) {
+                query.category = category.trim();
             }
 
             // 💰 Фильтр по цене
             if (minPrice !== undefined || maxPrice !== undefined) {
                 query.price = {};
-                if (minPrice !== undefined) query.price.$gte = Number(minPrice);
-                if (maxPrice !== undefined) query.price.$lte = Number(maxPrice);
+                if (minPrice !== undefined) {
+                    const min = Number(minPrice);
+                    if (!isNaN(min)) query.price.$gte = min;
+            }
+            if (maxPrice !== undefined) {
+                const max = Number(maxPrice);
+                if (!isNaN(max)) query.price.$lte = max;
+            }
+            // Если цена пустая — удаляем объект, чтобы не ломать запрос
+            if (Object.keys(query.price).length === 0) delete query.price;
             }
 
-            // 📦 Фильтр по наличию (опционально, для будущего)
-            if (req.query.inStock === 'true') {
-                query.stock = { $gt: 0 };
-            }
+            console.log('🔍 MongoDB query:', JSON.stringify(query)); // Отладка
 
             const products = await this.productRepo.findAll(query);
             res.json(products);
         } catch (err) {
-            console.error(err);
-            res.status(500).json({ error: "Internal server error" });
+            console.error('❌ ProductController.getAll error:', err);
+            res.status(500).json({ error: "Internal server error", details: err.message });
         }
     }
 

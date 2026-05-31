@@ -1,4 +1,5 @@
 const cacheService = require('../services/CacheService');
+const crypto = require('crypto');
 
 /**
  * Middleware для кэширования GET запросов
@@ -12,9 +13,27 @@ function cacheMiddleware(keyPrefix, ttl) {
             return next();
         }
 
-        // Формируем уникальный ключ: prefix:id или prefix:all
+        // Формируем уникальный ключ: prefix:id или prefix:all?query_hash
         const id = req.params.id;
-        const cacheKey = id ? `${keyPrefix}:${id}` : `${keyPrefix}:all`;
+        let cacheKey;
+
+        if (id) {
+            // Для одиночного ресурса: products:6a1443188a890c3afd1fe879
+            cacheKey = `${keyPrefix}:${id}`;
+        } else {
+            // Для списка: учитываем параметры запроса (поиск, фильтры)
+            const queryString = req.originalUrl?.split('?')[1] || '';
+            
+            if (queryString) {
+                // 🔧 Создаём MD5-хэш из строки запроса для безопасного ключа
+                // Это решает проблемы с кириллицей, спецсимволами и длиной ключа в Redis
+                const queryHash = crypto.createHash('md5').update(queryString, 'utf8').digest('hex');
+                cacheKey = `${keyPrefix}:all:${queryHash}`;
+            } else {
+                // Запрос без параметров: products:all
+                cacheKey = `${keyPrefix}:all`;
+            }
+        }
 
         try {
             // 1. Проверяем кэш

@@ -1,6 +1,8 @@
 import apiClient from './index';
 
-export const getProducts = () => apiClient.get('/products');
+// 🔥 Исправлено: функция теперь принимает url
+// Если url не передан, используется '/products' по умолчанию
+export const getProducts = (url = '/products') => apiClient.get(url);
 
 export const getProduct = (id) => apiClient.get(`/products/${id}`);
 

@@ -1,3 +1,13 @@
+/* Основные цвета*/
+:root {
+  --primary-green: #4CAF50;        /* Основной зелёный */
+  --primary-green-hover: #45a049;  /* При наведении */
+  --primary-green-light: #e8f5e9;  /* Светлый фон для инпутов */
+  --primary-green-border: #81c784; /* Границы */
+  --text-dark: #333;
+  --text-light: #666;
+}
+
 // ==================== ПЕРЕМЕННЫЕ ====================
 
 $bg: #1a2e1f;
@@ -825,5 +835,154 @@ a {
   
   p {
     margin: 0;
+  }
+}
+
+/* ===== Панель фильтров ===== */
+.filters-panel {
+  background: #e8f5e9;
+  border: 1px solid #81c784;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  
+  .filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 120px;
+    
+    label {
+      font-size: 0.85rem;
+      color: #2e3b2e;
+      font-weight: 500;
+    }
+    
+    &--search { flex: 2; min-width: 200px; }
+    &--price { min-width: 80px; }
+  }
+}
+
+/* ===== Зелёные инпуты (Исправленная видимость) ===== */
+.filter-input {
+  padding: 10px 12px;
+  border: 2px solid #4CAF50;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  
+  background-color: #ffffff;
+  color: #2e3b2e;
+  
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+  &::placeholder {
+    color: #a5b5a5;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #2E7D32;
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.25);
+    background-color: #fff;
+  }
+  
+  &--small {
+    min-width: 70px;
+    padding: 8px;
+  }
+  
+  &--green {
+    &:focus {
+      border-color: #2E7D32;
+      box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.25);
+    }
+  }
+}
+
+/* ===== Кнопка сброса ===== */
+.btn-reset {
+  padding: 8px 16px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  
+  &:hover {
+    background: #45a049;
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+/* ===== Индикатор активных фильтров ===== */
+.filters-active {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #81c784;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #2e3b2e;
+  
+  span:not(.filter-tag) {
+    font-weight: 500;
+  }
+}
+
+.filter-tag {
+  background: #4CAF50;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  
+  &--remove {
+    background: #ff6b6b;
+    padding: 4px 8px;
+    cursor: pointer;
+    border: none;
+    
+    &:hover {
+      background: #ee5a5a;
+    }
+  }
+}
+
+/* ===== Адаптив ===== */
+@media (max-width: 768px) {
+  .filters-panel .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-group {
+    min-width: 100%;
+  }
+  
+  .filter-group--price {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    
+    label { margin: 0; }
   }
 }

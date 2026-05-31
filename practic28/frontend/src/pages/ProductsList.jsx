@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { getProducts, deleteProduct } from '../api/products';
@@ -8,6 +8,16 @@ export default function ProductsList() {
   const [userRole, setUserRole] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [imageErrors, setImageErrors] = useState({});
+  
+  // 🔍 Состояние для фильтров
+  const [filters, setFilters] = useState({
+    search: '',
+    category: '',
+    minPrice: '',
+    maxPrice: ''
+  });
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  
   const navigate = useNavigate();
 
   const updateRole = () => {
@@ -24,32 +34,68 @@ export default function ProductsList() {
     }
   };
 
+  // 🔍 Debounce для поиска (300мс задержка)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(filters.search);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [filters.search]);
+
+  // 🏷️ Получаем уникальные категории из товаров
+  const categories = useMemo(() => {
+    const cats = [...new Set(products.map(p => p.category).filter(Boolean))];
+    return cats.sort();
+  }, [products]);
+
   useEffect(() => {
     updateRole();
     fetchProducts();
   }, []);
 
+  // 🔍 Обновлённая функция загрузки с фильтрами
   const fetchProducts = async () => {
     try {
-      const response = await getProducts();
+      // Формируем query-параметры
+      const params = new URLSearchParams();
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      if (filters.category) params.append('category', filters.category);
+      if (filters.minPrice) params.append('minPrice', filters.minPrice);
+      if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
       
-      // Логика обработки ответа с учетом кэширования (Практика 21)
+      const queryString = params.toString();
+      const url = `/products${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await getProducts(url);
+      
+      // 🛡️ Логика обработки ответа с учётом кэширования
       let productsData = response.data;
-      
-      // Если бэкенд вернул объект { source: 'cache', data: [...] }, берем массив из поля data
       if (productsData && typeof productsData === 'object' && !Array.isArray(productsData)) {
         productsData = productsData.data || [];
-      } 
-      // Если пришел пустой ответ или не массив, обнуляем
-      else if (!Array.isArray(productsData)) {
+      } else if (!Array.isArray(productsData)) {
         productsData = [];
       }
-      
       setProducts(productsData);
     } catch (err) {
       console.error(err);
-      alert('Ошибка загрузки товаров');
+      alert('Ошибка загрузки товаров: ' + (err.response?.data?.error || err.message));
     }
+  };
+
+  // 🔁 Перезагружаем товары при изменении фильтров
+  useEffect(() => {
+    fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, filters.category, filters.minPrice, filters.maxPrice]);
+
+  // 🎛️ Обработчики изменений фильтров
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  // ♻️ Сброс всех фильтров
+  const handleResetFilters = () => {
+    setFilters({ search: '', category: '', minPrice: '', maxPrice: '' });
   };
 
   const handleDelete = async (id) => {
@@ -99,10 +145,95 @@ export default function ProductsList() {
         <h2>Мир чая</h2>
         <div>
           <span className="user-role-badge">
-            {userRole === 'admin' ? 'Администратор' : userRole === 'seller' ? 'Продавец' : 'Пользователь'}
+            {userRole === 'admin' ? 'Администратор' : 'Покупатель'}
           </span>
           <button onClick={handleLogout} className="btn-logout">Выйти</button>
         </div>
+      </div>
+
+      {/* 🔍 Панель поиска и фильтрации */}
+      <div className="filters-panel">
+        <div className="filters-row">
+          {/* Поиск по названию */}
+          <div className="filter-group filter-group--search">
+            <label htmlFor="search">🔍 Поиск</label>
+            <input
+              id="search"
+              type="text"
+              placeholder="Название товара..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+              className="filter-input filter-input--green"
+            />
+          </div>
+
+          {/* Фильтр по категории */}
+          <div className="filter-group">
+            <label htmlFor="category">🏷️ Категория</label>
+            <select
+              id="category"
+              value={filters.category}
+              onChange={(e) => handleFilterChange('category', e.target.value)}
+              className="filter-input filter-input--green"
+            >
+              <option value="">Все категории</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Мин. цена */}
+          <div className="filter-group filter-group--price">
+            <label htmlFor="minPrice">💰 От</label>
+            <input
+              id="minPrice"
+              type="number"
+              placeholder="0"
+              min="0"
+              value={filters.minPrice}
+              onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+              className="filter-input filter-input--green filter-input--small"
+            />
+          </div>
+
+          {/* Макс. цена */}
+          <div className="filter-group filter-group--price">
+            <label htmlFor="maxPrice">До</label>
+            <input
+              id="maxPrice"
+              type="number"
+              placeholder="∞"
+              min="0"
+              value={filters.maxPrice}
+              onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+              className="filter-input filter-input--green filter-input--small"
+            />
+          </div>
+
+          {/* Кнопка сброса */}
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="btn-reset"
+            title="Сбросить фильтры"
+          >
+            ↺ Сброс
+          </button>
+        </div>
+        
+        {/* Индикатор активных фильтров */}
+        {(debouncedSearch || filters.category || filters.minPrice || filters.maxPrice) && (
+          <div className="filters-active">
+            <span>Активные фильтры:</span>
+            {debouncedSearch && <span className="filter-tag">🔍 "{debouncedSearch}"</span>}
+            {filters.category && <span className="filter-tag">🏷️ {filters.category}</span>}
+            {(filters.minPrice || filters.maxPrice) && (
+              <span className="filter-tag">💰 {filters.minPrice || 0}–{filters.maxPrice || '∞'} ₽</span>
+            )}
+            <button onClick={handleResetFilters} className="filter-tag filter-tag--remove" title="Сбросить">✕</button>
+          </div>
+        )}
       </div>
 
       <div className="toolbar">
@@ -125,7 +256,7 @@ export default function ProductsList() {
               {/* Изображение товара */}
               {p.imageUrl && !imageErrors[p.id] && (
                 <div className="product-image">
-                  <img 
+                  <img
                     src={`http://localhost${p.imageUrl}`}
                     alt={p.title}
                     onError={() => handleImageError(p.id)}
@@ -133,7 +264,6 @@ export default function ProductsList() {
                   />
                 </div>
               )}
-              
               {/* Заглушка если нет изображения или ошибка загрузки */}
               {(!p.imageUrl || imageErrors[p.id]) && (
                 <div className="product-image product-image--placeholder">
@@ -141,22 +271,19 @@ export default function ProductsList() {
                   <span>Нет изображения</span>
                 </div>
               )}
-              
               <div className="product-card-header">
                 <h3 className="product-title">{p.title}</h3>
                 <span className="product-category">{p.category}</span>
               </div>
-              
               <div className="product-price">
                 {p.price.toLocaleString()} ₽
               </div>
-              
               <div className="product-description">
                 <p className={expandedId === p.id ? 'expanded' : 'collapsed'}>
                   {p.description}
                 </p>
                 {p.description && p.description.length > 100 && (
-                  <button 
+                  <button
                     className="toggle-description"
                     onClick={() => toggleDescription(p.id)}
                   >
@@ -164,7 +291,6 @@ export default function ProductsList() {
                   </button>
                 )}
               </div>
-              
               <div className="product-card-actions">
                 {isAdmin && (
                   <Link to={`/products/${p.id}/edit`} className="btn-edit" title="Редактировать">
