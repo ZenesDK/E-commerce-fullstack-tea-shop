@@ -25,22 +25,28 @@ export default function ProductForm() {
     try {
       setLoading(true);
       const response = await getProduct(id);
-      const product = response.data;
       
+      // 🛡️ Обработка кэшированного ответа (как в ProductsList)
+      let product = response.data;
+      if (product && typeof product === 'object' && !Array.isArray(product) && product.data) {
+        product = product.data;
+      }
+      
+      // 🛡️ Гарантируем, что все поля имеют значения по умолчанию
       setForm({
-        title: product.title,
-        category: product.category,
-        description: product.description,
-        price: product.price,
+        title: product.title || '',
+        category: product.category || '',
+        description: product.description || '',
+        price: product.price !== undefined && product.price !== null ? String(product.price) : '',
         image: null
       });
       
-      // Если у товара есть изображение, показываем его
-      if (product.imageUrl) {
-        // Используем полный URL к серверу
-        const imageUrl = `http://localhost${product.imageUrl}`;
-        setImagePreview(imageUrl);
-        console.log('Загружено существующее изображение:', imageUrl);
+      // 🖼️ Обработка изображения (проверяем оба возможных имени поля)
+      const imageUrl = product.imageUrl || product.image_url;
+      if (imageUrl) {
+        const fullUrl = `http://localhost${imageUrl}`;
+        setImagePreview(fullUrl);
+        console.log('Загружено изображение:', fullUrl);
       } else {
         setImagePreview(null);
       }
@@ -115,7 +121,7 @@ export default function ProductForm() {
         <input
           type="text"
           placeholder="Название"
-          value={form.title}
+          value={form.title ?? ''}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
           required
           disabled={loading}
@@ -124,7 +130,7 @@ export default function ProductForm() {
         <input
           type="text"
           placeholder="Категория"
-          value={form.category}
+          value={form.category ?? ''}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
           required
           disabled={loading}
@@ -132,7 +138,7 @@ export default function ProductForm() {
         
         <textarea
           placeholder="Описание"
-          value={form.description}
+          value={form.description ?? ''}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           required
           disabled={loading}
@@ -141,7 +147,7 @@ export default function ProductForm() {
         <input
           type="number"
           placeholder="Цена"
-          value={form.price}
+          value={form.price ?? ''}
           onChange={(e) => setForm({ ...form, price: e.target.value })}
           required
           disabled={loading}
