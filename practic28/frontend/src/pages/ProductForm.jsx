@@ -7,11 +7,14 @@ export default function ProductForm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
-  const [form, setForm] = useState({ 
-    title: '', 
-    category: '', 
-    description: '', 
+  
+  // 🔥 ДОБАВЛЕНО: stock в начальное состояние
+  const [form, setForm] = useState({
+    title: '',
+    category: '',
+    description: '',
     price: '',
+    stock: '', // Изначально пустая строка, чтобы работал placeholder
     image: null
   });
 
@@ -25,28 +28,26 @@ export default function ProductForm() {
     try {
       setLoading(true);
       const response = await getProduct(id);
-      
-      // 🛡️ Обработка кэшированного ответа (как в ProductsList)
       let product = response.data;
+      
+      // Обработка кэшированного ответа
       if (product && typeof product === 'object' && !Array.isArray(product) && product.data) {
         product = product.data;
       }
       
-      // 🛡️ Гарантируем, что все поля имеют значения по умолчанию
+      // 🔥 ОБНОВЛЕНО: загружаем stock, если он есть
       setForm({
         title: product.title || '',
         category: product.category || '',
         description: product.description || '',
         price: product.price !== undefined && product.price !== null ? String(product.price) : '',
+        stock: product.stock !== undefined && product.stock !== null ? String(product.stock) : '', 
         image: null
       });
       
-      // 🖼️ Обработка изображения (проверяем оба возможных имени поля)
       const imageUrl = product.imageUrl || product.image_url;
       if (imageUrl) {
-        const fullUrl = `http://localhost${imageUrl}`;
-        setImagePreview(fullUrl);
-        console.log('Загружено изображение:', fullUrl);
+        setImagePreview(`http://localhost${imageUrl}`);
       } else {
         setImagePreview(null);
       }
@@ -63,7 +64,6 @@ export default function ProductForm() {
     const file = e.target.files[0];
     if (file) {
       setForm({ ...form, image: file });
-      // Для предпросмотра нового файла используем createObjectURL
       setImagePreview(URL.createObjectURL(file));
     }
   };
@@ -77,13 +77,15 @@ export default function ProductForm() {
       formData.append('category', form.category);
       formData.append('description', form.description);
       
-      // 🔥 Гарантируем, что price — число, а не строка "undefined"
       const priceValue = parseFloat(form.price);
-      if (isNaN(priceValue)) {
-        throw new Error('Цена должна быть числом');
-      }
+      if (isNaN(priceValue)) throw new Error('Цена должна быть числом');
       formData.append('price', priceValue);
-      
+
+      // 🔥 ИСПРАВЛЕНО: Обязательно добавляем stock в FormData
+      // Если поле пустое, сохраняем 0, иначе парсим число
+      const stockValue = parseInt(form.stock) || 0; 
+      formData.append('stock', stockValue);
+
       if (form.image) {
         formData.append('image', form.image);
       }
@@ -104,7 +106,6 @@ export default function ProductForm() {
     }
   };
 
-  // Очищаем URL.createObjectURL при размонтировании компонента
   useEffect(() => {
     return () => {
       if (imagePreview && imagePreview.startsWith('blob:')) {
@@ -116,29 +117,26 @@ export default function ProductForm() {
   return (
     <div className="container">
       <h2>{id ? 'Редактировать товар' : 'Новый товар'}</h2>
-      
       <form onSubmit={handleSubmit} className="product-form" encType="multipart/form-data">
         <input
           type="text"
           placeholder="Название"
-          value={form.title ?? ''}
+          value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
           required
           disabled={loading}
         />
-        
         <input
           type="text"
           placeholder="Категория"
-          value={form.category ?? ''}
+          value={form.category}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
           required
           disabled={loading}
         />
-        
         <textarea
           placeholder="Описание"
-          value={form.description ?? ''}
+          value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           required
           disabled={loading}
@@ -147,12 +145,23 @@ export default function ProductForm() {
         <input
           type="number"
           placeholder="Цена"
-          value={form.price ?? ''}
+          value={form.price}
           onChange={(e) => setForm({ ...form, price: e.target.value })}
           required
           disabled={loading}
         />
-        
+
+        {/* 🔥 НОВОЕ ПОЛЕ: Количество на складе */}
+        <input
+          type="number"
+          placeholder="Количество на складе" // Вместо 0
+          value={form.stock}
+          onChange={(e) => setForm({ ...form, stock: e.target.value })}
+          min="0"
+          disabled={loading}
+          style={{ background: '#fff', color: '#333' }} // Стили для контраста
+        />
+
         <div className="image-upload">
           <label className="image-upload__label">
             <span>📷 {imagePreview ? 'Изменить изображение' : 'Выберите изображение'}</span>
@@ -164,41 +173,22 @@ export default function ProductForm() {
               className="image-upload__input"
             />
           </label>
-          
           {imagePreview && (
             <div className="image-preview">
-              <img 
-                src={imagePreview} 
-                alt="Предпросмотр" 
-                onError={(e) => {
-                  console.error('Ошибка загрузки изображения:', imagePreview);
-                  e.target.src = 'https://via.placeholder.com/400x200?text=Image+not+found';
-                }}
-              />
-              <button 
-                type="button"
-                className="image-preview__remove"
-                onClick={() => {
-                  setImagePreview(null);
-                  setForm({ ...form, image: null });
-                }}
-              >
-                ✕
-              </button>
+              <img src={imagePreview} alt="Предпросмотр" />
+              <button type="button" className="image-preview__remove" onClick={() => {
+                setImagePreview(null);
+                setForm({ ...form, image: null });
+              }}>✕</button>
             </div>
           )}
         </div>
-        
+
         <div className="form-buttons">
           <button type="submit" className="form-btn form-btn--submit" disabled={loading}>
             {loading ? 'Сохранение...' : 'Сохранить'}
           </button>
-          <button 
-            type="button" 
-            className="form-btn form-btn--cancel"
-            onClick={() => navigate('/products')}
-            disabled={loading}
-          >
+          <button type="button" className="form-btn form-btn--cancel" onClick={() => navigate('/products')} disabled={loading}>
             Отмена
           </button>
         </div>

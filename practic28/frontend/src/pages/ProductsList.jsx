@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { getProducts, deleteProduct } from '../api/products';
+import { useCart } from '../context/CartContext'; // 👈 Импортируем хук корзины
 
 export default function ProductsList() {
   const [products, setProducts] = useState([]);
@@ -19,6 +20,9 @@ export default function ProductsList() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   
   const navigate = useNavigate();
+  
+  // 🛒 Получаем данные корзины из контекста
+  const { items, addToCart, totalCount } = useCart();
 
   const updateRole = () => {
     const token = localStorage.getItem('accessToken');
@@ -56,7 +60,6 @@ export default function ProductsList() {
   // 🔍 Обновлённая функция загрузки с фильтрами
   const fetchProducts = async () => {
     try {
-      // Формируем query-параметры
       const params = new URLSearchParams();
       if (debouncedSearch) params.append('search', debouncedSearch);
       if (filters.category) params.append('category', filters.category);
@@ -68,7 +71,6 @@ export default function ProductsList() {
       
       const response = await getProducts(url);
       
-      // 🛡️ Логика обработки ответа с учётом кэширования
       let productsData = response.data;
       if (productsData && typeof productsData === 'object' && !Array.isArray(productsData)) {
         productsData = productsData.data || [];
@@ -82,18 +84,15 @@ export default function ProductsList() {
     }
   };
 
-  // 🔁 Перезагружаем товары при изменении фильтров
   useEffect(() => {
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, filters.category, filters.minPrice, filters.maxPrice]);
 
-  // 🎛️ Обработчики изменений фильтров
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  // ♻️ Сброс всех фильтров
   const handleResetFilters = () => {
     setFilters({ search: '', category: '', minPrice: '', maxPrice: '' });
   };
@@ -125,6 +124,16 @@ export default function ProductsList() {
     setImageErrors(prev => ({ ...prev, [productId]: true }));
   };
 
+  const handleAddToCart = (product) => {
+    addToCart(product, 1)
+      .then(() => {
+        // Можно показать тост/уведомление
+      })
+      .catch(() => {
+        // Ошибка уже обработана в addToCart
+      });
+  };
+
   const isAdmin = userRole === 'admin';
   const isCustomer = userRole === 'customer' || isAdmin;
 
@@ -143,7 +152,12 @@ export default function ProductsList() {
     <div className="container">
       <div className="header-with-logout">
         <h2>Мир чая</h2>
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* 🛒 Кнопка корзины */}
+          <Link to="/cart" className="btn-cart-icon" title="Корзина">
+            🛒 {totalCount > 0 ? <span className="cart-badge">{totalCount}</span> : ''}
+          </Link>
+          
           <span className="user-role-badge">
             {userRole === 'admin' ? 'Администратор' : 'Покупатель'}
           </span>
@@ -154,7 +168,6 @@ export default function ProductsList() {
       {/* 🔍 Панель поиска и фильтрации */}
       <div className="filters-panel">
         <div className="filters-row">
-          {/* Поиск по названию */}
           <div className="filter-group filter-group--search">
             <label htmlFor="search">🔍 Поиск</label>
             <input
@@ -167,7 +180,6 @@ export default function ProductsList() {
             />
           </div>
 
-          {/* Фильтр по категории */}
           <div className="filter-group">
             <label htmlFor="category">🏷️ Категория</label>
             <select
@@ -183,7 +195,6 @@ export default function ProductsList() {
             </select>
           </div>
 
-          {/* Мин. цена */}
           <div className="filter-group filter-group--price">
             <label htmlFor="minPrice">💰 От</label>
             <input
@@ -197,7 +208,6 @@ export default function ProductsList() {
             />
           </div>
 
-          {/* Макс. цена */}
           <div className="filter-group filter-group--price">
             <label htmlFor="maxPrice">До</label>
             <input
@@ -211,18 +221,11 @@ export default function ProductsList() {
             />
           </div>
 
-          {/* Кнопка сброса */}
-          <button
-            type="button"
-            onClick={handleResetFilters}
-            className="btn-reset"
-            title="Сбросить фильтры"
-          >
+          <button type="button" onClick={handleResetFilters} className="btn-reset" title="Сбросить фильтры">
             ↺ Сброс
           </button>
         </div>
         
-        {/* Индикатор активных фильтров */}
         {(debouncedSearch || filters.category || filters.minPrice || filters.maxPrice) && (
           <div className="filters-active">
             <span>Активные фильтры:</span>
@@ -253,7 +256,6 @@ export default function ProductsList() {
         <div className="products-grid">
           {products.map((p) => (
             <div key={p.id} className="product-card">
-              {/* Изображение товара */}
               {p.imageUrl && !imageErrors[p.id] && (
                 <div className="product-image">
                   <img
@@ -264,7 +266,6 @@ export default function ProductsList() {
                   />
                 </div>
               )}
-              {/* Заглушка если нет изображения или ошибка загрузки */}
               {(!p.imageUrl || imageErrors[p.id]) && (
                 <div className="product-image product-image--placeholder">
                   <span>📷</span>
@@ -283,15 +284,26 @@ export default function ProductsList() {
                   {p.description}
                 </p>
                 {p.description && p.description.length > 100 && (
-                  <button
-                    className="toggle-description"
-                    onClick={() => toggleDescription(p.id)}
-                  >
+                  <button className="toggle-description" onClick={() => toggleDescription(p.id)}>
                     {expandedId === p.id ? 'Свернуть' : 'Читать далее'}
                   </button>
                 )}
               </div>
               <div className="product-card-actions">
+                {p.stock <= 0 ? (
+                  <button className="btn-out-of-stock" disabled>
+                    Нет в наличии
+                  </button>
+                ) : (
+                  <button 
+                    className="btn-cart" 
+                    onClick={() => handleAddToCart(p)}
+                    title="Добавить в корзину"
+                  >
+                    В корзину
+                  </button>
+                )}
+                
                 {isAdmin && (
                   <Link to={`/products/${p.id}/edit`} className="btn-edit" title="Редактировать">
                     Редактировать

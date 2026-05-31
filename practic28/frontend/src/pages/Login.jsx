@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../api/auth';
+import { useCart } from '../context/CartContext';
 
 export default function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { syncAndLogin } = useCart();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,6 +26,9 @@ export default function Login() {
       localStorage.setItem('userRole', decoded.role);
       
       console.log('Успешный вход. Роль:', decoded.role);
+      
+      // 🔥 СИНХРОНИЗАЦИЯ КОРЗИНЫ
+      await syncAndLogin(); 
       
       navigate('/products');
     } catch (err) {

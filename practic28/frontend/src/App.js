@@ -8,6 +8,7 @@ import ProductForm from './pages/ProductForm';
 import UsersList from './pages/UsersList';
 import PrivateRoute from './components/PrivateRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
+import CartPage from './pages/CartPage';
 import './App.scss';
 
 function App() {
@@ -76,6 +77,11 @@ function App() {
           } />
           
           <Route path="/" element={<Navigate to="/products" />} />
+          <Route path="/cart" element={
+              <PrivateRoute>
+                  <CartPage />
+              </PrivateRoute>
+          } />
         </Routes>
       </div>
     </BrowserRouter>

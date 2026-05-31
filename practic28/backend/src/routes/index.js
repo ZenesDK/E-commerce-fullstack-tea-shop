@@ -6,11 +6,13 @@ const roleMiddleware = require('../middleware/roleMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 const cacheMiddleware = require('../middleware/cacheMiddleware'); // Импорт кэша
 const cacheService = require('../services/CacheService'); // Сервис для ручной инвалидации
+const CartController = require('../controllers/CartController');
 
 function setupRoutes(app) {
     const authController = new AuthController();
     const userController = new UserController();
     const productController = new ProductController();
+    const cartController = new CartController();
 
     // --- AUTH ---
     app.post('/api/auth/register', authController.register.bind(authController));
@@ -118,6 +120,20 @@ function setupRoutes(app) {
         },
         productController.delete.bind(productController)
     );
+
+
+    // --- CART ---
+    // Получить корзину
+    app.get('/api/cart', authMiddleware, cartController.getCart.bind(cartController));
+    
+    // Добавить в корзину
+    app.post('/api/cart/add', authMiddleware, cartController.addToCart.bind(cartController));
+    
+    // Удалить из корзины
+    app.delete('/api/cart/remove/:productId', authMiddleware, cartController.removeFromCart.bind(cartController));
+    
+    // Обновить количество
+    app.put('/api/cart/update/:productId', authMiddleware, cartController.updateQuantity.bind(cartController));
 }
 
 module.exports = setupRoutes;
