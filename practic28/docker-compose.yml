@@ -25,6 +25,8 @@ services:
       - CLIENT_URL=http://localhost:3003
       - ACCESS_SECRET=your_access_secret
       - REFRESH_SECRET=your_refresh_secret
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
     volumes:
       - ./backend/uploads:/app/uploads
     depends_on:
@@ -44,6 +46,8 @@ services:
       - CLIENT_URL=http://localhost:3003
       - ACCESS_SECRET=your_access_secret
       - REFRESH_SECRET=your_refresh_secret
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
     volumes:
       - ./backend/uploads:/app/uploads
     depends_on:

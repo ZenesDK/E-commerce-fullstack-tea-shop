@@ -17,6 +17,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const SERVER_ID = process.env.SERVER_ID || 'unknown';
 
+app.post('/api/webhooks/stripe', express.raw({type: 'application/json'}), async (req, res) => {
+  try {
+    const orderController = new (require('./src/controllers/OrderController'))();
+    await orderController.handleWebhook(req, res);
+  } catch (err) {
+    console.error('Webhook error:', err);
+    res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+});
+
 // Middleware
 app.use(express.json());
 
@@ -43,6 +53,10 @@ app.get('/api/check-balance', (req, res) => {
 // Initialize DB and Cache and Start Server
 Promise.all([db.connect(), cacheService.connect()])
   .then(() => {
+    app.post('/api/webhooks/stripe', express.raw({type: 'application/json'}), async (req, res) => {
+      const orderController = new (require('./src/controllers/OrderController'))();
+      await orderController.handleWebhook(req, res);
+    });
     setupRoutes(app);
     // 🔥 Важно для Docker: слушаем на 0.0.0.0
     app.listen(PORT, '0.0.0.0', () => {

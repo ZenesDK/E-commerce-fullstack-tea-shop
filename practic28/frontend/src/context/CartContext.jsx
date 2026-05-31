@@ -67,18 +67,22 @@ export const CartProvider = ({ children }) => {
         await apiAddToCart(productId, quantity);
         await loadCartFromServer();
       } catch (err) {
-        alert(err.response?.data?.error || "Ошибка добавления в корзину");
-        throw err;
+        // 🔥 ОБРАБОТКА ОШИБКИ: показываем сообщение пользователю
+        // Бэкенд вернет { error: "Недостаточно товара на складе" }
+        const errorMessage = err.response?.data?.error || "Ошибка добавления в корзину";
+        alert(errorMessage); 
+        // Не пробрасываем ошибку дальше, чтобы не крашить приложение
       }
     } else {
+      // Локальная корзина (гость) — тут ошибки не будет, просто добавляем
       const newItems = [...items];
       const existing = newItems.find(i => i.productId === productId);
       if (existing) {
         existing.quantity += quantity;
       } else {
-        newItems.push({ 
-          productId, 
-          quantity, 
+        newItems.push({
+          productId,
+          quantity,
           price: product.price,
           title: product.title,
           image_url: product.imageUrl || product.image_url
@@ -103,11 +107,21 @@ export const CartProvider = ({ children }) => {
 
   const updateQuantity = async (productId, quantity) => {
     if (quantity < 1) return removeFromCart(productId);
+    
     const token = localStorage.getItem('accessToken');
     if (token) {
-      await apiUpdateQuantity(productId, quantity);
-      await loadCartFromServer();
+      try {
+        await apiUpdateQuantity(productId, quantity);
+        await loadCartFromServer();
+      } catch (err) {
+        // 🔥 ОБРАБОТКА ОШИБКИ: показываем сообщение пользователю
+        // Бэкенд вернет { error: "Недостаточно товара на складе" }
+        const errorMessage = err.response?.data?.error || "Ошибка обновления количества";
+        alert(errorMessage); 
+        // Не пробрасываем ошибку дальше, чтобы не крашить приложение
+      }
     } else {
+      // Локальная корзина (гость) — тут ошибки не будет, просто обновляем
       const newItems = items.map(i => i.productId === productId ? { ...i, quantity } : i);
       setItems(newItems);
       localStorage.setItem('cart', JSON.stringify(newItems));

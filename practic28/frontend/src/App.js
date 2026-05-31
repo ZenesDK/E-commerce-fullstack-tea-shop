@@ -9,6 +9,7 @@ import UsersList from './pages/UsersList';
 import CartPage from './pages/CartPage';
 import PrivateRoute from './components/PrivateRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
+import OrderHistory from './pages/OrderHistory';
 import './App.scss';
 
 function App() {
@@ -46,6 +47,12 @@ function App() {
           {/* 🔓 ПУБЛИЧНЫЕ МАРШРУТЫ (доступны всем) */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+
+          <Route path="/orders" element={
+            <PrivateRoute>
+              <OrderHistory />
+            </PrivateRoute>
+          } />
           
           {/* 🔥 КАТАЛОГ — ДОСТУПЕН ВСЕМ (убрали PrivateRoute!) */}
           <Route path="/products" element={<ProductsList />} />

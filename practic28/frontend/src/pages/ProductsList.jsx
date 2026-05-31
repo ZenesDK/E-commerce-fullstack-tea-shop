@@ -10,6 +10,7 @@ export default function ProductsList() {
   const [expandedId, setExpandedId] = useState(null);
   const [imageErrors, setImageErrors] = useState({});
   
+  // 🔍 Состояние для фильтров
   const [filters, setFilters] = useState({
     search: '',
     category: '',
@@ -19,7 +20,22 @@ export default function ProductsList() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   
   const navigate = useNavigate();
+  
+  // 🛒 Получаем данные корзины из контекста
   const { items, addToCart, totalCount } = useCart();
+
+  // 🔥 Обновляем товары при возврате со страницы оплаты
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderSuccess = urlParams.get('orderSuccess');
+    
+    if (orderSuccess === 'true') {
+      // Очищаем параметр из URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Перезагружаем товары
+      fetchProducts();
+    }
+  }, []);
 
   const updateRole = () => {
     const token = localStorage.getItem('accessToken');
@@ -40,6 +56,7 @@ export default function ProductsList() {
     }
   };
 
+  // 🔍 Debounce для поиска (300мс задержка)
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(filters.search);
@@ -47,6 +64,7 @@ export default function ProductsList() {
     return () => clearTimeout(handler);
   }, [filters.search]);
 
+  // 🏷️ Получаем уникальные категории из товаров
   const categories = useMemo(() => {
     const cats = [...new Set(products.map(p => p.category).filter(Boolean))];
     return cats.sort();
@@ -57,8 +75,10 @@ export default function ProductsList() {
     fetchProducts();
   }, []);
 
+  // 🔍 Обновлённая функция загрузки с фильтрами
   const fetchProducts = async () => {
     try {
+      // Формируем query-параметры
       const params = new URLSearchParams();
       if (debouncedSearch) params.append('search', debouncedSearch);
       if (filters.category) params.append('category', filters.category);
@@ -148,9 +168,17 @@ export default function ProductsList() {
       <div className="header-with-logout">
         <h2>Мир чая</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* 🛒 Кнопка корзины */}
           <Link to="/cart" className="btn-cart-icon" title="Корзина">
             🛒 {totalCount > 0 ? <span className="cart-badge">{totalCount}</span> : ''}
           </Link>
+          
+          {/* 📦 Кнопка истории заказов (только для авторизованных) */}
+          {isAuthenticated && (
+            <Link to="/orders" className="btn-orders-icon" title="История заказов">
+              📦
+            </Link>
+          )}
           
           {/* 🔥 КНОПКА "ВОЙТИ" ДЛЯ ГОСТЕЙ */}
           {!isAuthenticated && (
@@ -171,6 +199,7 @@ export default function ProductsList() {
         </div>
       </div>
 
+      {/* 🔍 Панель поиска и фильтрации */}
       <div className="filters-panel">
         <div className="filters-row">
           <div className="filter-group filter-group--search">
@@ -303,9 +332,10 @@ export default function ProductsList() {
                   <button 
                     className="btn-cart" 
                     onClick={() => handleAddToCart(p)}
-                    title="Добавить в корзину"
+                    title={p.stock <= 0 ? "Нет в наличии" : "Добавить в корзину"}
+                    disabled={p.stock <= 0} // 🔥 Блокируем, если товара нет
                   >
-                    В корзину
+                    {p.stock <= 0 ? "Нет в наличии" : "В корзину"}
                   </button>
                 )}
                 

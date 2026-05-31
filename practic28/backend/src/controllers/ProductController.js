@@ -58,7 +58,7 @@ class ProductController {
       
       const parsedPrice = parseFloat(price);
       // 🔥 Парсим stock в целое число, по умолчанию 0
-      const parsedStock = stock !== undefined ? parseInt(stock, 10) : 0;
+      const parsedStock = parseInt(stock) || 0;
 
       if (!title || !category || !description || isNaN(parsedPrice)) {
         if (req.file) fs.unlinkSync(req.file.path);
@@ -87,13 +87,11 @@ class ProductController {
   async update(req, res) {
     try {
       const id = req.params.id;
-      // 🔥 Деструктурируем stock из body
-      const { title, category, description, price, stock } = req.body;
+      const { title, category, description, price, stock } = req.body; // 🔥 ДОБАВЛЕНО: stock
       
       const parsedPrice = parseFloat(price);
-      // 🔥 Парсим stock
-      const parsedStock = stock !== undefined ? parseInt(stock, 10) : undefined;
-
+      const parsedStock = parseInt(stock); // 🔥 ДОБАВЛЕНО: парсинг stock
+      
       if (!title || !category || !description || isNaN(parsedPrice)) {
         if (req.file) fs.unlinkSync(req.file.path);
         return res.status(400).json({ error: "All fields are required, price must be a valid number" });
@@ -110,14 +108,20 @@ class ProductController {
         imageUrl = `/uploads/${req.file.filename}`;
       }
 
-      const updatedProduct = await this.productRepo.update(id, { 
+      const updateData = { 
         title, 
         category, 
         description, 
-        price: parsedPrice, 
-        stock: parsedStock, // 🔥 Передаем stock (может быть undefined, если не меняли)
+        price: parsedPrice,
         imageUrl 
-      });
+      };
+      
+      // 🔥 Добавляем stock только если он передан
+      if (!isNaN(parsedStock)) {
+        updateData.stock = parsedStock;
+      }
+
+      const updatedProduct = await this.productRepo.update(id, updateData);
       
       if (!updatedProduct) {
         if (req.file) fs.unlinkSync(req.file.path);

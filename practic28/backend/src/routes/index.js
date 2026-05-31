@@ -7,12 +7,14 @@ const upload = require('../middleware/uploadMiddleware');
 const cacheMiddleware = require('../middleware/cacheMiddleware'); // Импорт кэша
 const cacheService = require('../services/CacheService'); // Сервис для ручной инвалидации
 const CartController = require('../controllers/CartController');
+const OrderController = require('../controllers/OrderController');
 
 function setupRoutes(app) {
     const authController = new AuthController();
     const userController = new UserController();
     const productController = new ProductController();
     const cartController = new CartController();
+    const orderController = new OrderController();
 
     // --- AUTH ---
     app.post('/api/auth/register', authController.register.bind(authController));
@@ -133,6 +135,11 @@ function setupRoutes(app) {
     
     // Обновить количество
     app.put('/api/cart/update/:productId', authMiddleware, cartController.updateQuantity.bind(cartController));
+
+
+    app.post('/api/orders/checkout', authMiddleware, orderController.createCheckoutSession.bind(orderController));
+    app.get('/api/orders/history', authMiddleware, orderController.getOrderHistory.bind(orderController));
+    app.post('/api/orders/confirm', authMiddleware, orderController.confirmPayment.bind(orderController));
 }
 
 module.exports = setupRoutes;

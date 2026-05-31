@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import apiClient from '../api/index'; // 🔥 ДОБАВЛЕНО: импорт apiClient
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, totalAmount } = useCart();
@@ -22,10 +23,10 @@ export default function CartPage() {
       <div className="cart-list">
         {items.map(item => (
           <div key={item.productId} className="cart-item">
-            <img 
-              src={`http://localhost${item.image_url}`} 
-              alt={item.title} 
-              className="cart-item-img" 
+            <img
+              src={`http://localhost${item.image_url}`}
+              alt={item.title}
+              className="cart-item-img"
             />
             
             <div className="cart-item-info">
@@ -34,21 +35,21 @@ export default function CartPage() {
             </div>
 
             <div className="cart-item-controls">
-              <button 
-                className="qty-btn" 
+              <button
+                className="qty-btn"
                 onClick={() => updateQuantity(item.productId, item.quantity - 1)}
               >
                 -
               </button>
               <span className="qty-value">{item.quantity}</span>
-              <button 
-                className="qty-btn" 
+              <button
+                className="qty-btn"
                 onClick={() => updateQuantity(item.productId, item.quantity + 1)}
               >
                 +
               </button>
-              <button 
-                className="remove-btn" 
+              <button
+                className="remove-btn"
                 onClick={() => removeFromCart(item.productId)}
               >
                 ×
@@ -65,17 +66,23 @@ export default function CartPage() {
         
         <div>
           <h3>Итого: {totalAmount.toFixed(2)} ₽</h3>
-          <button 
+          <button
             className="btn-checkout"
-            onClick={() => {
+            onClick={async () => {
               const token = localStorage.getItem('accessToken');
               if (!token) {
                 // 🔥 Нет токена — редирект на логин с возвратом в корзину
                 window.location.href = '/login?returnTo=/cart';
               } else {
-                // 🔥 Есть токен — можно переходить к оплате (здесь будет Stripe)
-                alert('Переход к оплате (Stripe)');
-                // Здесь будет интеграция со Stripe
+                // 🔥 Есть токен — создаём сессию оплаты Stripe
+                try {
+                  const response = await apiClient.post('/orders/checkout');
+                  // Перенаправляем пользователя на Stripe Checkout
+                  window.location.href = response.data.url;
+                } catch (err) {
+                  console.error('Checkout error:', err);
+                  alert(err.response?.data?.error || 'Ошибка оформления заказа');
+                }
               }
             }}
           >
