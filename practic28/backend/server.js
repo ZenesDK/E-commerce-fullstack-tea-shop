@@ -19,10 +19,6 @@ const SERVER_ID = process.env.SERVER_ID || 'unknown';
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3001',
-  credentials: true
-}));
 
 // Static Files for Uploads
 const UPLOAD_DIR = path.join(__dirname, 'uploads');

@@ -26,7 +26,20 @@ export default function UsersList() {
   const fetchUsers = async () => {
     try {
       const response = await getUsers();
-      setUsers(response.data);
+      
+      // 🛡️ Обработка ответа с учётом кэширования (как в ProductsList)
+      let usersData = response.data;
+      
+      // Если бэкенд вернул объект { source: 'cache', data: [...] }
+      if (usersData && typeof usersData === 'object' && !Array.isArray(usersData)) {
+        usersData = usersData.data || [];
+      }
+      // Если пришёл не массив — защищаемся
+      else if (!Array.isArray(usersData)) {
+        usersData = [];
+      }
+      
+      setUsers(usersData);
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401 || err.response?.status === 403) {
@@ -128,8 +141,7 @@ export default function UsersList() {
                       onChange={(e) => handleRoleChange(user.id, e.target.value)}
                       disabled={isProtectedAdmin || isSelf}
                     >
-                      <option value="user">Пользователь</option>
-                      <option value="seller">Продавец</option>
+                      <option value="customer">Покупатель</option>
                       <option value="admin">Администратор</option>
                     </select>
                     {isSelf && <span className="self-badge">(вы)</span>}

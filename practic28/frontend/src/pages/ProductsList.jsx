@@ -80,7 +80,7 @@ export default function ProductsList() {
   };
 
   const isAdmin = userRole === 'admin';
-  const isSeller = userRole === 'seller' || isAdmin;
+  const isCustomer = userRole === 'customer' || isAdmin;
 
   if (userRole === null) {
     return (
@@ -106,7 +106,7 @@ export default function ProductsList() {
       </div>
 
       <div className="toolbar">
-        {isSeller && (
+        {isAdmin && (
           <Link to="/products/new" className="btn-primary">Добавить товар</Link>
         )}
         {isAdmin && (
@@ -116,7 +116,7 @@ export default function ProductsList() {
 
       {!Array.isArray(products) || products.length === 0 ? (
         <div className="empty">
-          <p>Нет товаров. {isSeller && 'Нажмите "Добавить товар" чтобы создать первый.'}</p>
+          <p>Нет товаров. {isAdmin && 'Нажмите "Добавить товар" чтобы создать первый.'}</p>
         </div>
       ) : (
         <div className="products-grid">
@@ -166,12 +166,12 @@ export default function ProductsList() {
               </div>
               
               <div className="product-card-actions">
-                {isSeller && (
+                {isAdmin && (
                   <Link to={`/products/${p.id}/edit`} className="btn-edit" title="Редактировать">
                     Редактировать
                   </Link>
                 )}
-                {isSeller && (
+                {isAdmin && (
                   <button onClick={() => handleDelete(p.id)} className="btn-delete" title="Удалить">
                     Удалить
                   </button>

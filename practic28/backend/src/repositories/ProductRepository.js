@@ -5,11 +5,10 @@ class ProductRepository extends IRepository {
     /**
      * Получение всех товаров
      */
-    async findAll() {
-        const products = await Product.find().sort({ createdAt: -1 });
+    async findAll(filter = {}) {
+        const products = await Product.find(filter).sort({ createdAt: -1 });
         return products.map(p => this._formatProduct(p));
     }
-
     /**
      * Получение товара по ID
      */
@@ -29,7 +28,8 @@ class ProductRepository extends IRepository {
             category,
             description,
             price,
-            image_url: imageUrl
+            image_url: imageUrl,
+            stock: productData.stock || 0
         });
         
         await newProduct.save();
@@ -44,7 +44,7 @@ class ProductRepository extends IRepository {
         
         const updatedProduct = await Product.findByIdAndUpdate(
             id,
-            { title, category, description, price, image_url: imageUrl },
+            { title, category, description, price, image_url: imageUrl, stock: productData.stock },
             { new: true, runValidators: true }
         );
         

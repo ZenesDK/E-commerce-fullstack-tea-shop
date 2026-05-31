@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
     first_name: { type: String, required: true },
     last_name: { type: String, required: true },
     hashed_password: { type: String, required: true },
-    role: { type: String, default: 'user', enum: ['user', 'seller', 'admin'] },
+    role: { type: String, default: 'customer', enum: ['customer', 'admin', 'user', 'seller'] },
     is_blocked: { type: Boolean, default: false }
 });
 

@@ -87,7 +87,7 @@ function setupRoutes(app) {
     // POST /api/products - Инвалидация кэша товаров
     app.post('/api/products', 
         authMiddleware, 
-        roleMiddleware(['seller', 'admin']), 
+        roleMiddleware(['admin']), 
         upload.single('image'), 
         async (req, res, next) => {
             await cacheService.invalidatePattern('products:*');
@@ -99,7 +99,7 @@ function setupRoutes(app) {
     // PUT /api/products/:id - Инвалидация кэша товаров
     app.put('/api/products/:id', 
         authMiddleware, 
-        roleMiddleware(['seller', 'admin']), 
+        roleMiddleware(['admin']), 
         upload.single('image'), 
         async (req, res, next) => {
             await cacheService.invalidatePattern('products:*');
@@ -111,7 +111,7 @@ function setupRoutes(app) {
     // DELETE /api/products/:id - Инвалидация кэша товаров
     app.delete('/api/products/:id', 
         authMiddleware, 
-        roleMiddleware(['admin', 'seller']), 
+        roleMiddleware(['admin']), 
         async (req, res, next) => {
             await cacheService.invalidatePattern('products:*');
             next();

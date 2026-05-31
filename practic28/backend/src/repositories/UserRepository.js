@@ -39,7 +39,7 @@ class UserRepository extends IRepository {
      * Создание нового пользователя
      */
     async create(userData) {
-        const { email, first_name, last_name, password, role = 'user' } = userData;
+        const { email, first_name, last_name, password, role = 'customer' } = userData;
         
         // Хеширование пароля перед сохранением
         const hashedPassword = await bcrypt.hash(password, 10);

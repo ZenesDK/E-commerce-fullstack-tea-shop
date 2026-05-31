@@ -26,7 +26,32 @@ class ProductController {
      */
     async getAll(req, res) {
         try {
-            const products = await this.productRepo.findAll();
+            const { search, category, minPrice, maxPrice } = req.query;
+            const query = {};
+
+            // 🔍 Поиск по названию (регистронезависимый)
+            if (search) {
+                query.title = { $regex: search, $options: 'i' };
+            }
+
+            // 🏷️ Фильтр по категории (точное совпадение)
+            if (category) {
+                query.category = category;
+            }
+
+            // 💰 Фильтр по цене
+            if (minPrice !== undefined || maxPrice !== undefined) {
+                query.price = {};
+                if (minPrice !== undefined) query.price.$gte = Number(minPrice);
+                if (maxPrice !== undefined) query.price.$lte = Number(maxPrice);
+            }
+
+            // 📦 Фильтр по наличию (опционально, для будущего)
+            if (req.query.inStock === 'true') {
+                query.stock = { $gt: 0 };
+            }
+
+            const products = await this.productRepo.findAll(query);
             res.json(products);
         } catch (err) {
             console.error(err);
@@ -96,21 +121,30 @@ class ProductController {
      *         description: Ошибка валидации
      */
     async create(req, res) {
-        try {
-            const { title, category, description, price } = req.body;
-            if (!title || !category || !description || price === undefined) {
-                if (req.file) fs.unlinkSync(req.file.path);
-                return res.status(400).json({ error: "All fields are required" });
-            }
-
-            const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-            const newProduct = await this.productRepo.create({ title, category, description, price, imageUrl });
-            res.status(201).json(newProduct);
-        } catch (err) {
-            console.error(err);
-            if (req.file) fs.unlinkSync(req.file.path);
-            res.status(500).json({ error: "Internal server error" });
+    try {
+        const { title, category, description, price } = req.body;
+        
+        // 🔥 Парсим price в число и валидируем
+        const parsedPrice = parseFloat(price);
+        if (!title || !category || !description || isNaN(parsedPrice)) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: "All fields are required, price must be a valid number" });
         }
+
+        const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+        const newProduct = await this.productRepo.create({ 
+        title, 
+        category, 
+        description, 
+        price: parsedPrice, // 🔥 Передаём число
+        imageUrl 
+        });
+        res.status(201).json(newProduct);
+    } catch (err) {
+        console.error(err);
+        if (req.file) fs.unlinkSync(req.file.path);
+        res.status(500).json({ error: "Internal server error" });
+    }
     }
 
     /**
@@ -152,38 +186,46 @@ class ProductController {
      *         description: Товар не найден
      */
     async update(req, res) {
-        try {
-            const id = req.params.id;
-            const { title, category, description, price } = req.body;
-            
-            if (!title || !category || !description || price === undefined) {
-                if (req.file) fs.unlinkSync(req.file.path);
-                return res.status(400).json({ error: "All fields are required" });
-            }
-
-            const oldProduct = await this.productRepo.findById(id);
-            let imageUrl = oldProduct?.image_url;
-
-            if (req.file) {
-                if (imageUrl) {
-                    const oldPath = path.join(__dirname, '../..', imageUrl);
-                    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-                }
-                imageUrl = `/uploads/${req.file.filename}`;
-            }
-
-            const updatedProduct = await this.productRepo.update(id, { title, category, description, price, imageUrl });
-            if (!updatedProduct) {
-                if (req.file) fs.unlinkSync(req.file.path);
-                return res.status(404).json({ error: "Product not found" });
-            }
-
-            res.json(updatedProduct);
-        } catch (err) {
-            console.error(err);
-            if (req.file) fs.unlinkSync(req.file.path);
-            res.status(500).json({ error: "Internal server error" });
+    try {
+        const id = req.params.id;
+        const { title, category, description, price } = req.body;
+        
+        // 🔥 Парсим price в число и валидируем
+        const parsedPrice = parseFloat(price);
+        if (!title || !category || !description || isNaN(parsedPrice)) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: "All fields are required, price must be a valid number" });
         }
+
+        const oldProduct = await this.productRepo.findById(id);
+        let imageUrl = oldProduct?.image_url;
+        
+        if (req.file) {
+        if (imageUrl) {
+            const oldPath = path.join(__dirname, '../..', imageUrl);
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+        imageUrl = `/uploads/${req.file.filename}`;
+        }
+
+        const updatedProduct = await this.productRepo.update(id, { 
+        title, 
+        category, 
+        description, 
+        price: parsedPrice, // 🔥 Передаём число
+        imageUrl 
+        });
+        
+        if (!updatedProduct) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(404).json({ error: "Product not found" });
+        }
+        res.json(updatedProduct);
+    } catch (err) {
+        console.error(err);
+        if (req.file) fs.unlinkSync(req.file.path);
+        res.status(500).json({ error: "Internal server error" });
+    }
     }
 
     /**

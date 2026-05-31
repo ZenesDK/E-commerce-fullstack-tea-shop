@@ -38,7 +38,7 @@ export default function ProductForm() {
       // Если у товара есть изображение, показываем его
       if (product.imageUrl) {
         // Используем полный URL к серверу
-        const imageUrl = `http://localhost:3000${product.imageUrl}`;
+        const imageUrl = `http://localhost${product.imageUrl}`;
         setImagePreview(imageUrl);
         console.log('Загружено существующее изображение:', imageUrl);
       } else {
@@ -65,19 +65,23 @@ export default function ProductForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
     try {
       const formData = new FormData();
       formData.append('title', form.title);
       formData.append('category', form.category);
       formData.append('description', form.description);
-      formData.append('price', form.price);
       
-      // Отправляем изображение только если выбрано новое
+      // 🔥 Гарантируем, что price — число, а не строка "undefined"
+      const priceValue = parseFloat(form.price);
+      if (isNaN(priceValue)) {
+        throw new Error('Цена должна быть числом');
+      }
+      formData.append('price', priceValue);
+      
       if (form.image) {
         formData.append('image', form.image);
       }
-      
+
       if (id) {
         await updateProduct(id, formData);
         alert('Товар обновлён');
@@ -88,7 +92,7 @@ export default function ProductForm() {
       navigate('/products');
     } catch (err) {
       console.error(err);
-      alert('Ошибка сохранения');
+      alert(err.message || 'Ошибка сохранения');
     } finally {
       setLoading(false);
     }

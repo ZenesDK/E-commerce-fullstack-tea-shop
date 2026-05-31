@@ -5,10 +5,8 @@ const userSchema = new mongoose.Schema({
   first_name: { type: String, required: true },
   last_name: { type: String, required: true },
   hashed_password: { type: String, required: true },
-  role: { type: String, default: 'user', enum: ['user', 'seller', 'admin'] },
+  role: { type: String, default: 'customer', enum: ['customer', 'admin'] },
   is_blocked: { type: Boolean, default: false }
-}, {
-  timestamps: true // автоматически добавляет createdAt и updatedAt
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

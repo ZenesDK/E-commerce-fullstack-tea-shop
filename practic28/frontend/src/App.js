@@ -52,7 +52,7 @@ function App() {
           } />
           
           <Route path="/products/new" element={
-            <RoleBasedRoute allowedRoles={['seller', 'admin']}>
+            <RoleBasedRoute allowedRoles={['admin']}>
               <ProductForm />
             </RoleBasedRoute>
           } />
@@ -64,7 +64,7 @@ function App() {
           } />
           
           <Route path="/products/:id/edit" element={
-            <RoleBasedRoute allowedRoles={['seller', 'admin']}>
+            <RoleBasedRoute allowedRoles={['admin']}>
               <ProductForm />
             </RoleBasedRoute>
           } />
